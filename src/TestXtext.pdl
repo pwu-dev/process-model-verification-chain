@@ -1,0 +1,7 @@
+Process ex1 {
+	wd work1
+	wd work2
+	ws s2s from work1 to work2
+	guidance text 'write message'
+	processRessource Developpeur quantiteMax 4
+}

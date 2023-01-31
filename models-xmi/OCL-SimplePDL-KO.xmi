@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<simplepdl:Process
+    xmi:version="2.0"
+    xmlns:xmi="http://www.omg.org/XMI"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:simplepdl="http://simplepdl"
+    xsi:schemaLocation="http://simplepdl SimplePDL.ecore"
+    name="1NomInvalide">
+  <processElements
+      xsi:type="simplepdl:WorkDefinition"
+      linksToPredecessors="//@processElements.3"
+      linksToSuccessors="//@processElements.3"
+      name="NomIdentique">
+    <allocatedRessources
+        nbOccurences="2"
+        ressource="//@processElements.5"
+        name="OccurenceSuperieurValMax"/>
+  </processElements>
+  <processElements
+      xsi:type="simplepdl:WorkDefinition"
+      name="NomIdentique"/>
+  <processElements
+      xsi:type="simplepdl:Guidance"
+      text="WorkSequence Reflexive"/>
+  <processElements
+      xsi:type="simplepdl:WorkSequence"
+      predecessor="//@processElements.0"
+      successor="//@processElements.0"/>
+  <processElements
+      xsi:type="simplepdl:ProcessRessource"
+      quantiteMax="-1"
+      name="QuantiteNegative"/>
+  <processElements
+      xsi:type="simplepdl:ProcessRessource"
+      quantiteMax="1"
+      name="QuantitePositive"/>
+</simplepdl:Process>

@@ -1,0 +1,61 @@
+import ecore : 'http://www.eclipse.org/emf/2002/Ecore';
+
+package petriNet : petriNet = 'http://www.example.org/petriNet'
+{
+	class PetriNet
+	{
+		attribute name : String[1];
+		property petriElements#petriNet : PetriElement[*|1] { ordered composes };
+		invariant validNamePetriNet('Invalid name: ' + self.name): 
+			if self.name.oclIsUndefined() then
+				false
+			else
+				self.name.matches('[A-Za-z_][A-Za-z0-9_]+')
+			endif;
+	}
+	abstract class PetriElement
+	{
+		property petriNet#petriElements : PetriNet[1] { derived readonly transient volatile !resolve };
+	}
+	class Node extends PetriElement
+	{
+		attribute name : String[1];
+		property ingoing : Arc[*|1] { ordered };
+		property outgoing : Arc[*|1] { ordered };
+		invariant validNameNode('Invalid name: ' + self.name): 
+			if self.name.oclIsUndefined() then
+				false
+			else
+				self.name.matches('[A-Za-z_][A-Za-z0-9_]+')
+			endif;
+		invariant uniqNamesNode: self.petriNet.petriElements
+			->select(pe|pe.oclIsKindOf(Node))
+			->collect(pe|pe.oclAsType(Node))
+			->forAll(w | self = w or self.name <> w.name);
+		invariant nodeWithArc: (self.ingoing->size()->asSequence()->first() >=1)
+								or (self.outgoing->size()->asSequence()->first() >=1);
+	}
+	class Place extends Node
+	{
+		attribute nbTokens : ecore::EInt[1];
+		invariant positiveValueNbTokens: self.nbTokens >= 0;
+	}
+	class Transition extends Node;
+	class Arc extends PetriElement
+	{
+		property target : Node[1];
+		property source : Node[1];
+		attribute arcType : ArcType[1];
+		attribute poids : ecore::EInt[1];
+		invariant notReflexiveNode: self.source <> self.target;
+		invariant positiveValuePoids: self.poids >= 1;
+		invariant sourceAndTargetNotSameType: 
+					(self.source.oclIsTypeOf(Place) and self.target.oclIsTypeOf(Transition)) or
+					(self.source.oclIsTypeOf(Transition) and self.target.oclIsTypeOf(Place));
+	}
+	enum ArcType { serializable }
+	{
+		literal normal;
+		literal read_arc = 1;
+	}
+}

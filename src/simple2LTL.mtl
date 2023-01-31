@@ -1,0 +1,31 @@
+[comment encoding = UTF-8 /]
+[module simple2LTL('http://simplepdl')]
+
+
+[template public process2LTL(aProcess : Process)]
+[comment @main/]
+[file (aProcess.name + '.ltl', false, 'UTF-8')]
+[let wds : OrderedSet(WorkDefinition) = aProcess.getWDs() ] 
+[if (wds->size() > 0)]
+# Propriété 1 - Invariant : chaque activité est soit non commencée soit en cours 
+['[]'/] [for (wd : WorkDefinition | wds)][if (wds->indexOf(wd)=1)]([wd.name + '_ready'/] \/ [wd.name + '_started'/])[else] /\ ([wd.name + '_ready'/] \/ [wd.name + '_started'/])[/if][/for];
+
+# Vérification de la terminaison
+op finished = [for (wd : WorkDefinition | wds)][if (wds->indexOf(wd)=1)][wd.name + '_finished'/][else] /\ [wd.name + '_finished'/][/if][/for]; 
+[else]
+ None.
+[/if]
+[/let]
+['[]'/] (dead => finished); # Propriété 2 : Si le reseau est dead alors toutes les activités sont en état finished
+['[]'/] (finished => dead); # Propriété 3 : Si toutes les activités sont en état finished alors le reseau est dead
+['[] <>'/] dead; # Propriété 4 : Pour toute exécution, le reseau finit par être dead. 
+['- <>'/] finished; # Propriété 5 : Il n'existe pas d'exécution pour lequel toutes les activités sont en état finished
+[/file]
+[/template]
+
+
+[query public getWDs(p: Process) : OrderedSet(WorkDefinition) = 
+	p.processElements->select( e | e.oclIsTypeOf(WorkDefinition) )
+		->collect( e | e.oclAsType(WorkDefinition) )
+		->asOrderedSet()
+/]

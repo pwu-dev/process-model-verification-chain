@@ -1,0 +1,141 @@
+module SimplePDL2PetriNet;
+create OUT: petriNet from  IN: simplepdl;
+
+-- Obtenir le processus qui contient ce process element.
+-- Remarque: Ce helper ne serait pas utile si une référence opposite
+-- avait été placée entre Process et ProcessElement
+helper context simplepdl!ProcessElement
+def: getProcess(): simplepdl!Process =
+	simplepdl!Process.allInstances()
+		->select(p | p.processElements->includes(self))
+		->asSequence()->first();
+
+-- Traduire un Process en un PetriNet de même nom
+rule Process2PetriNet {
+	from p: simplepdl!Process
+	to pn: petriNet!PetriNet (name <- p.name)
+}
+
+-- Traduire une WorkDefinition en un motif sur le réseau de Petri
+rule WorkDefinition2PetriNet {
+	from wd: simplepdl!WorkDefinition
+	to					
+		-- PLACES d'une WorkDefinition
+		p_ready:	petriNet!Place(
+					name <- wd.name + '_ready',
+					nbTokens <- 1,
+					petriNet <- wd.getProcess()),
+			
+		p_started:	petriNet!Place(
+					name <- wd.name + '_started',
+					nbTokens <- 0,
+					petriNet <- wd.getProcess()),
+				
+		p_running:	petriNet!Place(
+					name <- wd.name + '_running',
+					nbTokens <- 0,
+					petriNet <- wd.getProcess()),
+				
+		p_finished: petriNet!Place(
+					name <- wd.name + '_finished',
+					nbTokens <- 0,
+					petriNet <- wd.getProcess()),
+					
+		-- TRANSITIONS d'une WorkDefinition
+		tr_start:	petriNet!Transition(
+					name <- wd.name + '_start',
+					petriNet <- wd.getProcess()),
+
+		tr_finish:	petriNet!Transition(
+					name <- wd.name + '_finish',
+					petriNet <- wd.getProcess()),
+		
+		-- ARCS d'une WorkDefinition
+		arc_rdy2stt:petriNet!Arc(
+					source <- p_ready,
+					target <- tr_start,
+					arcType <- #normal,
+					poids <- 1,
+					petriNet <- wd.getProcess()),
+	
+		arc_stt2std:petriNet!Arc(
+					source <- tr_start,
+					target <- p_started,
+					arcType <- #normal,
+					poids <- 1,
+					petriNet <- wd.getProcess()),
+					
+		arc_stt2run:petriNet!Arc(
+					source <- tr_start,
+					target <- p_running,
+					arcType <- #normal,
+					poids <- 1,
+					petriNet <- wd.getProcess()),
+					
+		arc_run2fns:petriNet!Arc(
+					source <- p_running,
+					target <- tr_finish,
+					arcType <- #normal,
+					poids <- 1,
+					petriNet <- wd.getProcess()),
+					
+		arc_fns2fnd:petriNet!Arc(
+					source <- tr_finish,
+					target <- p_finished,
+					arcType <- #normal,
+					poids <- 1,
+					petriNet <- wd.getProcess())
+}
+
+-- Traduire une WorkSequence en un motif sur le réseau de Petri
+rule WorkSequence2PetriNet {
+	from ws: simplepdl!WorkSequence
+	to
+		-- ARC d'une WorkSequence
+		arc_ws:	petriNet!Arc(
+				arcType <- #read_arc,
+				poids <- 1,
+				source <- if ((ws.linkType = #startToStart) or (ws.linkType = #startToFinish))
+							then thisModule.resolveTemp(ws.predecessor,'p_started')
+							else thisModule.resolveTemp(ws.predecessor,'p_finished')
+						  endif,
+				target <- if ((ws.linkType = #startToStart) or (ws.linkType = #finishToStart))
+							then thisModule.resolveTemp(ws.successor,'tr_start')
+							else thisModule.resolveTemp(ws.successor,'tr_finish')
+						  endif,
+				petriNet <- ws.getProcess()
+				)		
+}
+
+-- Traduire un ProcessRessource en un motif sur le réseau de Petri
+rule ProcessRessource2PetriNet {
+	from pres: simplepdl!ProcessRessource
+	to
+		-- PLACE d'un ProcessRessource
+		p_proc_res:	petriNet!Place(
+					name <- pres.name,
+					nbTokens <- pres.quantiteMax,
+					petriNet <- pres.getProcess())		
+}
+
+-- Traduire une AllocatedRessource en un motif sur le réseau de Petri
+rule AllocatedRessource2PetriNet {
+	from ares: simplepdl!AllocatedRessource
+	to
+		-- ARCS d'une AllocatedRessource
+		arc_out:petriNet!Arc(
+				arcType <- #normal,
+				poids <- ares.nbOccurences,
+				source <- thisModule.resolveTemp(ares.ressource,'p_proc_res'),
+				target <- thisModule.resolveTemp(ares.allocator,'tr_start'),
+				petriNet <- ares.allocator.getProcess()
+				),
+			
+		arc_in: petriNet!Arc(
+				arcType <- #normal,
+				poids <- ares.nbOccurences,
+				source <- thisModule.resolveTemp(ares.allocator,'tr_finish'), 
+				target <- thisModule.resolveTemp(ares.ressource,'p_proc_res'),
+				petriNet <- ares.allocator.getProcess()
+				)
+}

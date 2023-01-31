@@ -1,0 +1,88 @@
+import ecore : 'http://www.eclipse.org/emf/2002/Ecore';
+
+package simplepdl : simplepdl = 'http://simplepdl'
+{
+	enum WorkSequenceType { serializable }
+	{
+		literal startToStart;
+		literal finishToStart = 1;
+		literal startToFinish = 2;
+		literal finishToFinish = 3;
+	}
+	class Process
+	{
+		attribute name : String[1];
+		property processElements#process : ProcessElement[*|1] { ordered composes };
+		invariant validNameProcess('Invalid name: ' + self.name): 
+		if self.name.oclIsUndefined() then
+			false
+		else
+			self.name.matches('[A-Za-z_][A-Za-z0-9_]+')
+		endif;
+	}
+	abstract class ProcessElement
+	{
+		property process#processElements : Process[1] { derived readonly transient volatile !resolve };
+	}
+	class WorkDefinition extends ProcessElement
+	{
+		property linksToPredecessors#successor : WorkSequence[*|1] { ordered };
+		property linksToSuccessors#predecessor : WorkSequence[*|1] { ordered };
+		attribute name : String[1];
+		property allocatedRessources#allocator : AllocatedRessource[*|1] { ordered composes };
+		invariant validNameWD('Invalid name: ' + self.name): 
+			if self.name.oclIsUndefined() then
+				false
+			else
+				self.name.matches('[A-Za-z_][A-Za-z0-9_]+')
+			endif;
+		invariant uniqNamesWD: self.process.processElements
+			->select(pe|pe.oclIsKindOf(WorkDefinition))
+			->collect(pe|pe.oclAsType(WorkDefinition))
+			->forAll(w | self = w or self.name <> w.name);
+	}
+	class WorkSequence extends ProcessElement
+	{
+		attribute linkType : WorkSequenceType[1];
+		property predecessor#linksToSuccessors : WorkDefinition[1];
+		property successor#linksToPredecessors : WorkDefinition[1];
+		invariant successorAndPredecessorInSameProcess(
+			'Activities not in the same process : ' + self.predecessor.name 
+			+ ' in ' + self.predecessor.process.name+ ' and '
+			+ self.successor.name + ' in ' + self.successor.process.name): 
+			self.process = self.successor.process
+			and self.process = self.predecessor.process;
+		invariant notReflexive: self.predecessor <> self.successor;
+	}
+	class Guidance extends ProcessElement
+	{
+		property elements : ProcessElement[*|1] { ordered };
+		attribute text : String[1];
+	}
+	class ProcessRessource extends ProcessElement
+	{
+		attribute quantiteMax : ecore::EInt[1];
+		attribute name : String[1];
+		property allocated : AllocatedRessource[*|1] { ordered };
+		invariant validNameProcRes('Invalid name: ' + self.name): 
+			if self.name.oclIsUndefined() then
+				false
+			else
+				self.name.matches('[A-Za-z_][A-Za-z0-9_]+')
+			endif;
+		invariant uniqNamesProcRes: self.process.processElements
+			->select(pe|pe.oclIsKindOf(ProcessRessource))
+			->collect(pe|pe.oclAsType(ProcessRessource))
+			->forAll(w | self = w or self.name <> w.name);
+		invariant postiveValueQteMax: self.quantiteMax >= 0;
+	}
+	class AllocatedRessource
+	{
+		attribute nbOccurences : ecore::EInt[1];
+		property ressource : ProcessRessource[1];
+		property allocator#allocatedRessources : WorkDefinition[1];
+		attribute name : String[1];
+		invariant positiveValueNbOcc: self.nbOccurences >= 0;
+		invariant maxValueNbOcc: self.nbOccurences <= self.ressource.quantiteMax;
+	}
+}

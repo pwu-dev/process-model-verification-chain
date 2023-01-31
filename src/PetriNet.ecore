@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ecore:EPackage xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:ecore="http://www.eclipse.org/emf/2002/Ecore" name="petriNet" nsURI="http://www.example.org/petriNet" nsPrefix="petriNet">
+  <eAnnotations source="http://www.eclipse.org/OCL/Import">
+    <details key="ecore" value="http://www.eclipse.org/emf/2002/Ecore"/>
+  </eAnnotations>
+  <eAnnotations source="http://www.eclipse.org/emf/2002/Ecore">
+    <details key="invocationDelegates" value="http://www.eclipse.org/emf/2002/Ecore/OCL/Pivot"/>
+    <details key="settingDelegates" value="http://www.eclipse.org/emf/2002/Ecore/OCL/Pivot"/>
+    <details key="validationDelegates" value="http://www.eclipse.org/emf/2002/Ecore/OCL/Pivot"/>
+  </eAnnotations>
+  <eClassifiers xsi:type="ecore:EClass" name="PetriNet">
+    <eAnnotations source="http://www.eclipse.org/emf/2002/Ecore">
+      <details key="constraints" value="validNamePetriNet"/>
+    </eAnnotations>
+    <eAnnotations source="http://www.eclipse.org/emf/2002/Ecore/OCL/Pivot">
+      <details key="validNamePetriNet" value="Tuple {&#xA;&#x9;message : String = 'Invalid name: ' + self.name,&#xA;&#x9;status : Boolean = &#xA;&#x9;&#x9;&#x9;if self.name.oclIsUndefined() then&#xA;&#x9;&#x9;&#x9;&#x9;false&#xA;&#x9;&#x9;&#x9;else&#xA;&#x9;&#x9;&#x9;&#x9;self.name.matches('[A-Za-z_][A-Za-z0-9_]+')&#xA;&#x9;&#x9;&#x9;endif&#xA;}.status"/>
+    </eAnnotations>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="name" lowerBound="1" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="petriElements" upperBound="-1"
+        eType="#//PetriElement" containment="true" eOpposite="#//PetriElement/petriNet"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="PetriElement" abstract="true">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="petriNet" lowerBound="1"
+        eType="#//PetriNet" changeable="false" volatile="true" transient="true" derived="true"
+        resolveProxies="false" eOpposite="#//PetriNet/petriElements"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="Node" eSuperTypes="#//PetriElement">
+    <eAnnotations source="http://www.eclipse.org/emf/2002/Ecore">
+      <details key="constraints" value="validNameNode uniqNamesNode nodeWithArc"/>
+    </eAnnotations>
+    <eAnnotations source="http://www.eclipse.org/emf/2002/Ecore/OCL/Pivot">
+      <details key="validNameNode" value="Tuple {&#xA;&#x9;message : String = 'Invalid name: ' + self.name,&#xA;&#x9;status : Boolean = &#xA;&#x9;&#x9;&#x9;if self.name.oclIsUndefined() then&#xA;&#x9;&#x9;&#x9;&#x9;false&#xA;&#x9;&#x9;&#x9;else&#xA;&#x9;&#x9;&#x9;&#x9;self.name.matches('[A-Za-z_][A-Za-z0-9_]+')&#xA;&#x9;&#x9;&#x9;endif&#xA;}.status"/>
+      <details key="uniqNamesNode" value="self.petriNet.petriElements&#xA;&#x9;&#x9;&#x9;->select(pe|pe.oclIsKindOf(Node))&#xA;&#x9;&#x9;&#x9;->collect(pe|pe.oclAsType(Node))&#xA;&#x9;&#x9;&#x9;->forAll(w | self = w or self.name &lt;> w.name)"/>
+      <details key="nodeWithArc" value="(self.ingoing->size()->asSequence()->first() >=1)&#xA;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;or (self.outgoing->size()->asSequence()->first() >=1)"/>
+    </eAnnotations>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="name" lowerBound="1" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="ingoing" upperBound="-1"
+        eType="#//Arc"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="outgoing" upperBound="-1"
+        eType="#//Arc"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="Place" eSuperTypes="#//Node">
+    <eAnnotations source="http://www.eclipse.org/emf/2002/Ecore">
+      <details key="constraints" value="positiveValueNbTokens"/>
+    </eAnnotations>
+    <eAnnotations source="http://www.eclipse.org/emf/2002/Ecore/OCL/Pivot">
+      <details key="positiveValueNbTokens" value="self.nbTokens >= 0"/>
+    </eAnnotations>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="nbTokens" lowerBound="1"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="Transition" eSuperTypes="#//Node"/>
+  <eClassifiers xsi:type="ecore:EClass" name="Arc" eSuperTypes="#//PetriElement">
+    <eAnnotations source="http://www.eclipse.org/emf/2002/Ecore">
+      <details key="constraints" value="notReflexiveNode positiveValuePoids sourceAndTargetNotSameType"/>
+    </eAnnotations>
+    <eAnnotations source="http://www.eclipse.org/emf/2002/Ecore/OCL/Pivot">
+      <details key="notReflexiveNode" value="self.source &lt;> self.target"/>
+      <details key="positiveValuePoids" value="self.poids >= 1"/>
+      <details key="sourceAndTargetNotSameType" value="&#xA;&#x9;&#x9;&#x9;&#x9;&#x9;(self.source.oclIsTypeOf(Place) and self.target.oclIsTypeOf(Transition)) or&#xA;&#x9;&#x9;&#x9;&#x9;&#x9;(self.source.oclIsTypeOf(Transition) and self.target.oclIsTypeOf(Place))"/>
+    </eAnnotations>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="target" lowerBound="1"
+        eType="#//Node"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="source" lowerBound="1"
+        eType="#//Node"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="arcType" lowerBound="1"
+        eType="#//ArcType"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="poids" lowerBound="1" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EEnum" name="ArcType">
+    <eLiterals name="normal"/>
+    <eLiterals name="read_arc" value="1"/>
+  </eClassifiers>
+</ecore:EPackage>

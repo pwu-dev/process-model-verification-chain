@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<petriNet:PetriNet
+    xmi:version="2.0"
+    xmlns:xmi="http://www.omg.org/XMI"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:petriNet="http://www.example.org/petriNet"
+    xsi:schemaLocation="http://www.example.org/petriNet PetriNet.ecore"
+    name="1NomInvalide">
+  <petriElements
+      xsi:type="petriNet:Node"
+      name="NomIdentique"/>
+  <petriElements
+      xsi:type="petriNet:Node"
+      name="NomIdentique"/>
+  <petriElements
+      xsi:type="petriNet:Node"
+      name="NoeudSansArc"/>
+  <petriElements
+      xsi:type="petriNet:Place"
+      name="NbTokensNegative"
+      nbTokens="-1"/>
+  <petriElements
+      xsi:type="petriNet:Transition"
+      name="UnArcReflexif"/>
+  <petriElements
+      xsi:type="petriNet:Arc"
+      target="//@petriElements.3"
+      source="//@petriElements.3"
+      poids="1"/>
+  <petriElements
+      xsi:type="petriNet:Transition"
+      name="UnArcAvecPoidsNul"
+      ingoing="//@petriElements.7"/>
+  <petriElements
+      xsi:type="petriNet:Arc"
+      target="//@petriElements.6"
+      source="//@petriElements.3"/>
+</petriNet:PetriNet>

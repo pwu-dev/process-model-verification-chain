@@ -1,0 +1,52 @@
+[comment encoding = UTF-8 /]
+[module petri2tina('http://www.example.org/petriNet')]
+
+
+[template public petrinet2tina(aPetriNet : PetriNet)]
+[comment @main/]
+[file (aPetriNet.name + '.net', false, 'UTF-8')]
+
+[comment Afficher le nom du réseau de Petri/]
+net [aPetriNet.name/]
+[comment Afficher les places/]
+[let places : OrderedSet(Place) = aPetriNet.getPlaces() ]
+[if (places->size() > 0)]
+[for (p : Place | places)]
+pl [p.name/] ([p.nbTokens/])
+[/for] 
+[else]
+  	None.
+[/if]
+[/let]
+[comment Afficher les transitions/]
+[let transitions : OrderedSet(Transition) = aPetriNet.getTransitions() ]
+[if (transitions->size() > 0)]
+[for (tr : Transition | transitions)]
+tr [tr.name/] [ingoingArcs(tr.ingoing)/] -> [outgoingArcs(tr.outgoing)/]
+[/for] 
+[else]
+  	None.
+[/if]
+[/let]
+[/file]
+[/template]
+
+[query public getPlaces(p: PetriNet) : OrderedSet(Place) =
+	p.petriElements->select( e | e.oclIsTypeOf(Place) ) 
+		->collect( e | e.oclAsType(Place) )
+		->asOrderedSet()
+/]
+
+[query public getTransitions(p: PetriNet) : OrderedSet(Transition) =
+	p.petriElements->select( e | e.oclIsTypeOf(Transition) ) 
+		->collect( e | e.oclAsType(Transition) )
+		->asOrderedSet()
+/]
+
+[template public ingoingArcs(arcs : OrderedSet(Arc)) post (trim()) ]
+	[for (a : Arc | arcs)][a.source.name/][if (a.arcType = ArcType::read_arc)]?[a.poids/] [elseif (a.poids > 1)]*[a.poids/][else][/if] [/for]
+[/template]
+
+[template public outgoingArcs(arcs : OrderedSet(Arc)) post (trim()) ]
+	[for (a : Arc | arcs)][a.target.name/][if (a.poids > 1)]*[a.poids/] [else] [/if] [/for]
+[/template]
